@@ -54,7 +54,7 @@ export default function App() {
     window.setTimeout(() => setToast(""), 2600);
   };
 
-  const selectPage = next => { const route = pageRoutes[next] || pageRoutes.dashboard; if (window.location.pathname !== route) window.history.pushState({}, "", route); setPage(next); setStudentProfile(null); setClassProfile(null); setMobileOpen(false); };
+  const selectPage = next => { const safePage = pageRoutes[next] ? next : "dashboard"; const route = pageRoutes[safePage]; if (window.location.pathname !== route) window.history.pushState({}, "", route); setPage(safePage); setStudentProfile(null); setClassProfile(null); setMobileOpen(false); };
   const openClass = classItem => { const slug = classItem.name.toLowerCase().replace(/\s+/g, "-"); window.history.pushState({}, "", `/classes/${slug}`); setPage("structure"); setClassProfile(classItem); setStudentProfile(null); setMobileOpen(false); };
   const closeClass = () => selectPage("structure");
   const confirm = (title, message, confirmLabel, onConfirm, tone = "danger") => setConfirmation({ title, message, confirmLabel, onConfirm, tone });

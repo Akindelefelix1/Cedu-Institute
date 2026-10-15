@@ -21,7 +21,7 @@ export const institutionClasses = [
 
 export const navigationGroups = [
   { label: "Workspace", items: [["dashboard", "Overview"], ["students", "Students"]] },
-  { label: "Content studio", items: [["questions", "Question bank"], ["structure", "Classes & levels"], ["book", "Practice sessions"], ["resources", "Resource bank"]] },
+  { label: "Content studio", items: [["questions", "Question bank"], ["structure", "Classes & levels"], ["practice", "Practice sessions"], ["resources", "Resource bank"]] },
   { label: "Institution", items: [["invite", "Invitations"], ["staff", "Staff & permissions"], ["activity", "Activity log"], ["settings", "Settings"]] },
 ];
 
