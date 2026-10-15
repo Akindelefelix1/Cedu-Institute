@@ -1,0 +1,6 @@
+import React from "react";
+import { Badge, Button, Icon } from "../components/ui";
+
+export default function PracticeSessions({ notify }) {
+  return <div className="content-stack"><section className="practice-hero"><div><Badge tone="yellow">TEACHER MODE</Badge><h2>Turn your questions into practice</h2><p>Create focused sessions for a class, subject or topic. Students will see these in their learner view.</p><Button onClick={() => notify("Practice session builder opened")} icon="plus">Create practice session</Button></div><div className="practice-art">✦</div></section><div className="section-title"><h2>Recent practice sessions</h2><button onClick={() => notify("All sessions loaded")}>View all <Icon name="arrow" /></button></div><div className="session-grid">{[["Fractions warm-up", "Mathematics", "Primary 5 Gold", "86%"], ["Living things", "Basic Science", "Primary 6 Blue", "72%"], ["Vocabulary builder", "English", "Primary 4 Green", "64%"]].map(([title, subject, className, progress]) => <article className="session-card" key={title}><Badge tone="purple">Live</Badge><h3>{title}</h3><p>{subject} · {className}</p><div className="session-bottom"><span>12 questions</span><strong>{progress} completed</strong></div><div className="session-track"><i style={{ width: progress }} /></div></article>)}</div></div>;
+}

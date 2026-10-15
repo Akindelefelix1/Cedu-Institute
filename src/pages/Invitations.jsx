@@ -1,0 +1,9 @@
+import React, { useState } from "react";
+import { Badge, Button } from "../components/ui";
+
+export default function Invitations({ notify }) {
+  const [target, setTarget] = useState("");
+  const send = () => { if (!target.trim()) return notify("Enter an email or phone number first"); notify("Invitation sent"); setTarget(""); };
+  const copyCode = async () => { try { if (!navigator.clipboard?.writeText) throw new Error("Clipboard unavailable"); await navigator.clipboard.writeText("GREENFIELD-26"); notify("Invite code copied to clipboard"); } catch { notify("Invite code is ready to copy"); } };
+  return <div className="content-stack"><section className="invite-hero"><div><Badge>YOUR INSTITUTION CODE</Badge><h2>GREENFIELD-26</h2><p>Students can use this code to request access to Greenfield Academy.</p><div className="invite-actions"><Button onClick={copyCode}>Copy code</Button></div></div><div className="qr-placeholder"><div>▦</div><span>Scan to join</span></div></section><section className="panel"><div className="panel-header"><h2>Invite by email or phone</h2></div><p className="panel-copy">Send a personal invitation to a student, teacher or parent.</p><div className="invite-input"><input value={target} onChange={event => setTarget(event.target.value)} placeholder="name@example.com or phone number" aria-label="Invite email or phone number" /><Button onClick={send}>Send invite</Button></div></section><section className="panel codes-panel"><div className="panel-header"><h2>Invite codes</h2><Button variant="soft" onClick={() => notify("New invite code generated")}>Create new code</Button></div><div className="code-row"><div><strong>GREENFIELD-26</strong><span>Created Sep 20, 2026 · Used 184 times</span></div><Badge tone="green">Active</Badge><button onClick={() => notify("Code disabled")}>Disable</button></div></section></div>;
+}
