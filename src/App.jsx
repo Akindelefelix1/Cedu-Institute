@@ -16,6 +16,7 @@ import ClassesLevelsPage from "./pages/ClassesLevels";
 import ClassDetailsPage from "./pages/ClassDetails";
 import StaffPermissionsPage from "./pages/StaffPermissions";
 import { AuthPage, LearnerPreview } from "./pages/Auth";
+import { clearInstitutionSession, getInstitutionAccount, getInstitutionToken, institutionRequest } from "./services/institutionApi";
 
 const logo = "/Cedu Logo.png";
 const titles = { dashboard: "Overview", students: "Students", questions: "Question bank", structure: "Classes & levels", practice: "Practice sessions", resources: "Resource bank", invite: "Invitations", staff: "Staff & permissions", activity: "Activity log", settings: "Institution settings" };
@@ -32,6 +33,8 @@ export default function App() {
   const [questions, setQuestions] = useState(initialQuestions);
   const [toast, setToast] = useState("");
   const [welcome, setWelcome] = useState(null);
+  const [account, setAccount] = useState(getInstitutionAccount);
+  const [sessionChecked, setSessionChecked] = useState(() => !getInstitutionAccount() || !getInstitutionToken());
   const [studentProfile, setStudentProfile] = useState(studentFromLocation);
   const [classProfile, setClassProfile] = useState(classFromLocation);
 
@@ -41,6 +44,16 @@ export default function App() {
     const handlePopState = () => { setPage(pageFromLocation()); setStudentProfile(studentFromLocation()); setClassProfile(classFromLocation()); };
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+
+  useEffect(() => {
+    if (!account || !getInstitutionToken()) { if (account) { clearInstitutionSession(); setAccount(null); } setSessionChecked(true); return undefined; }
+    let active = true;
+    institutionRequest("/auth/institution/me")
+      .then(data => { if (active) setAccount(data.account); })
+      .catch(() => { if (active) { clearInstitutionSession(); setAccount(null); } })
+      .finally(() => { if (active) setSessionChecked(true); });
+    return () => { active = false; };
   }, []);
 
   const notify = message => {
@@ -63,18 +76,19 @@ export default function App() {
   const saveQuestion = question => { setQuestions(current => editingQuestion ? current.map(item => item.id === editingQuestion.id ? { ...item, ...question, id: item.id, status: question.publishStatus || item.status } : item) : [{ ...question, status: question.publishStatus || "Draft" }, ...current]); setModal(null); notify(editingQuestion ? "Question updated successfully" : "Question saved successfully"); };
 
   if (welcome === "learner") return <LearnerPreview onBack={() => setWelcome(null)} onOnboarding={() => setWelcome("auth")} />;
-  if (welcome === "auth") return <AuthPage onOpen={() => setWelcome(null)} />;
+  if (!sessionChecked) return <main className="app-error-state"><div><span>…</span><h1>Restoring your workspace</h1><p>Checking your secure institution session.</p></div></main>;
+  if (!account || welcome === "auth") return <AuthPage onOpen={() => setWelcome(null)} onAuthenticated={nextAccount => { setAccount(nextAccount); setWelcome(null); }} />;
 
   return <div className="app-shell">
     <aside className={`sidebar ${mobileOpen ? "sidebar-open" : ""}`}>
       <button className="sidebar-brand" onClick={() => setWelcome("auth")} aria-label="Open sign in"><img src={logo} alt="Cedu" /><span className="brand-pill">INSTITUTION</span></button>
-      <div className="institution-switch"><Avatar initials="GW" color="yellow" /><div><strong>Greenfield Academy</strong><span>Institution workspace</span></div></div>
+      <div className="institution-switch"><Avatar initials={(account.institutionName || "IN").slice(0, 2).toUpperCase()} color="yellow" /><div><strong>{account.institutionName}</strong><span>{account.publicAccess ? "Public · request to join" : `Invite only · ${account.inviteCode || "code unavailable"}`}</span></div></div>
       <nav className="nav-groups">{nav.map(group => <div className="nav-group" key={group.label}><div className="nav-label">{group.label}</div>{group.items.map(([key, label]) => <button className={`nav-item ${page === key ? "active" : ""}`} key={key} onClick={() => selectPage(key)}><Icon name={key} /><span>{label}</span>{key === "invite" && <i className="nav-dot">3</i>}</button>)}</div>)}</nav>
-      <div className="sidebar-bottom"><button className="logout" onClick={() => confirm("Sign out of Cedu?", "You will return to the sign-in page.", "Sign out", () => setWelcome("auth"))}>↪ Sign out</button></div>
+      <div className="sidebar-bottom"><button className="logout" onClick={() => confirm("Sign out of Cedu?", "You will return to the sign-in page.", "Sign out", () => { clearInstitutionSession(); setAccount(null); setWelcome(null); })}>↪ Sign out</button></div>
     </aside>
     {mobileOpen && <button className="mobile-scrim" onClick={() => setMobileOpen(false)} aria-label="Close menu" />}
     <main className="main-area">
-      <header className="topbar"><button className="mobile-menu" onClick={() => setMobileOpen(true)} aria-label="Open navigation">☰</button><div className="breadcrumbs"><span>Greenfield Academy</span><b>/</b><strong>{studentProfile ? "Student profile" : classProfile ? "Class workspace" : titles[page]}</strong></div><div className="top-actions"><button className="preview-button" onClick={() => setWelcome("learner")}>Preview learner view <Icon name="arrow" /></button><button className="icon-button" onClick={() => notify("You have 3 new notifications")} aria-label="View notifications"><Icon name="bell" /><i /></button><div className="profile"><Avatar initials="AO" /><div><strong>Ada Okafor</strong><span>Institution owner</span></div><span>⌄</span></div></div></header>
+      <header className="topbar"><button className="mobile-menu" onClick={() => setMobileOpen(true)} aria-label="Open navigation">☰</button><div className="breadcrumbs"><span>{account.institutionName}</span><b>/</b><strong>{studentProfile ? "Student profile" : classProfile ? "Class workspace" : titles[page]}</strong></div><div className="top-actions"><button className="preview-button" onClick={() => setWelcome("learner")}>Preview learner view <Icon name="arrow" /></button><button className="icon-button" onClick={() => notify("You have 3 new notifications")} aria-label="View notifications"><Icon name="bell" /><i /></button><div className="profile"><Avatar initials={(account.ownerName || "IN").slice(0, 2).toUpperCase()} /><div><strong>{account.ownerName}</strong><span>Institution owner</span></div><button aria-label="Sign out" onClick={() => { clearInstitutionSession(); setAccount(null); setWelcome(null); }}>⌄</button></div></div></header>
       <div className="page-content">
         {studentProfile ? <StudentProfile student={studentProfile} onBack={closeProfile} notify={notify} /> : classProfile ? <ClassDetailsPage classItem={classProfile} onBack={closeClass} notify={notify} selectPage={selectPage} /> : <><PageHeading page={page} onAction={setModal} />{page === "dashboard" && <DashboardPage selectPage={selectPage} setModal={setModal} notify={notify} confirm={confirm} />}{page === "students" && <StudentsPage notify={notify} />}{page === "questions" && <QuestionBankPage questions={questions} setQuestions={setQuestions} setModal={setModal} notify={notify} confirm={confirm} />}{page === "structure" && <ClassesLevelsPage notify={notify} openClass={openClass} />}{page === "practice" && <PracticeSessionsPage notify={notify} />}{page === "resources" && <ResourcesPage notify={notify} />}{page === "invite" && <InvitationsPage notify={notify} />}{page === "staff" && <StaffPermissionsPage notify={notify} />}{page === "activity" && <ActivityPage />}{page === "settings" && <SettingsPage notify={notify} />}</>}
       </div>

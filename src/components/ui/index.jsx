@@ -13,8 +13,8 @@ export function Badge({ children, tone = "purple" }) {
   return <span className={`badge badge-${tone}`}>{children}</span>;
 }
 
-export function Button({ children, variant = "primary", onClick, icon, type = "button" }) {
-  return <button type={type} onClick={onClick} className={`button button-${variant}`}>
+export function Button({ children, variant = "primary", onClick, icon, type = "button", disabled = false }) {
+  return <button type={type} onClick={onClick} disabled={disabled} className={`button button-${variant}`}>
     {icon && <Icon name={icon} />}{children}
   </button>;
 }
