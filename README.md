@@ -1,5 +1,12 @@
 # Cedu Institution Dashboard
 
+PS C:\Users\akind\Desktop\Cedugames_Admin> 
+C:\Users\akind\Desktop\Cedugames_BE
+PS C:\Users\akind\Desktop\Cedugames_Users> 
+access the siblings folders from here for all  end to end wiring
+
+
+
 UI-only React/Vite mock for the Cedu institution and teacher workspace.
 
 ## Run locally

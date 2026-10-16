@@ -1,0 +1,11 @@
+{
+  "short_name": "Cedu Admin",
+  "name": "Cedu Administration",
+  "icons": [
+    { "src": "cedugames-logo.png?v=cedu-2026", "type": "image/png", "sizes": "1983x793", "purpose": "any" }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#56347f",
+  "background_color": "#ffffff"
+}

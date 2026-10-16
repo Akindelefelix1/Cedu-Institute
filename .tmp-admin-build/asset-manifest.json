@@ -1,0 +1,36 @@
+{
+  "files": {
+    "main.css": "/static/css/main.8580feca.css",
+    "main.js": "/static/js/main.b80c8fc8.js",
+    "static/js/453.dd750413.chunk.js": "/static/js/453.dd750413.chunk.js",
+    "static/media/cedugames-logo.png": "/static/media/cedugames-logo.242e6be44b58cec011b9.png",
+    "static/media/micross.ttf": "/static/media/micross.ded61520209d525ec582.ttf",
+    "static/media/calibril.ttf": "/static/media/calibril.bfc9611cc594de9eda6b.ttf",
+    "static/media/badgeFive.png": "/static/media/badgeFive.d60ba1147017114247c2.png",
+    "static/media/badgeTwo.png": "/static/media/badgeTwo.ba7944d2735458da5708.png",
+    "static/media/baloo-500.ttf": "/static/media/baloo-500.1acece5b97ec1fcb4aac.ttf",
+    "static/media/baloo-600.ttf": "/static/media/baloo-600.97df5949d4bbfbeeb946.ttf",
+    "static/media/baloo-700.ttf": "/static/media/baloo-700.f9c574f3a00a8155d2b7.ttf",
+    "static/media/baloo-400.ttf": "/static/media/baloo-400.1ed83227939c960f9030.ttf",
+    "static/media/baloo-800.ttf": "/static/media/baloo-800.724ec5134a4cdf563224.ttf",
+    "static/media/badgeOne.png": "/static/media/badgeOne.922c862e1230e1f26ac6.png",
+    "static/media/badgethree.png": "/static/media/badgethree.f8f0c28409569919c744.png",
+    "static/media/badgefour.png": "/static/media/badgefour.d18ac95115f1c843d2f7.png",
+    "static/media/inter.ttf": "/static/media/inter.fd272b9e3ca9b73890cb.ttf",
+    "static/media/leaders.png": "/static/media/leaders.ccfe30b55e8aad25e212.png",
+    "static/media/Poppins.otf": "/static/media/Poppins.f0c40fb3cca74f208452.otf",
+    "static/media/Sansation_Regular.ttf": "/static/media/Sansation_Regular.9be04a011dc2beea9985.ttf",
+    "static/media/regular.otf": "/static/media/regular.d8bf9c01fa3ff12964af.otf",
+    "static/media/Satoshi-Regular.otf": "/static/media/Satoshi-Regular.811ccb0b5af1892a71df.otf",
+    "static/media/segoe.ttf": "/static/media/segoe.45472284dc36b2486ce2.ttf",
+    "static/media/cta.png": "/static/media/cta.a6d48af0f5132b73903a.png",
+    "index.html": "/index.html",
+    "main.8580feca.css.map": "/static/css/main.8580feca.css.map",
+    "main.b80c8fc8.js.map": "/static/js/main.b80c8fc8.js.map",
+    "453.dd750413.chunk.js.map": "/static/js/453.dd750413.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.8580feca.css",
+    "static/js/main.b80c8fc8.js"
+  ]
+}
