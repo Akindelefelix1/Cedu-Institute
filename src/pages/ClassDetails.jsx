@@ -7,7 +7,7 @@ export default function ClassDetails({ classItem, onBack, notify, selectPage, se
   const subjects = classItem?.subjects || ["Mathematics", "English"];
   const learners = classItem?.learners || 0;
   const questions = classItem?.questions || 0;
-  const addQuestion = (subject) => setModal?.({ type: "question", initialQuestion: { subject, level: className } });
+  const addQuestion = (subject) => setModal?.({ type: "institutionQuestion", levelId: classItem?.id, section: classItem?.category, className, learningArea: subject });
   return <div className="class-workspace">
     <button className="back-link" onClick={onBack}><Icon name="arrow-left" /> Back to {labels.level.toLowerCase()}s & structure</button>
     <section className="class-header-card"><div><Badge tone="purple">{labels.level.toUpperCase()} WORKSPACE</Badge><h2>{className}</h2><p>Organise learning placement, monitor learners and manage the content assigned to this {labels.level.toLowerCase()}.</p><div className="class-card-meta"><span>Active {labels.level.toLowerCase()}</span><span>{subjects.length} {labels.subject.toLowerCase()}</span><span>Institution managed</span></div></div><div className="class-header-actions"><Button onClick={() => selectPage("students")} variant="outline">View learners</Button><Button onClick={() => notify(`${className} settings opened`)}>{labels.level} settings</Button></div><div className="class-stats"><span><strong>{learners}</strong> {labels.learner.toLowerCase()}</span><span><strong>{questions}</strong> questions</span><span><strong>{classItem?.progress || 0}%</strong> average progress</span><span><strong>{subjects.length}</strong> {labels.subject.toLowerCase()}</span></div></section>
