@@ -11,7 +11,7 @@ export default function Invitations({ notify }) {
   const [requestError, setRequestError] = useState("");
   const [updating, setUpdating] = useState(null);
   const [confirmation, setConfirmation] = useState(null);
-  const send = () => { if (!target.trim()) return notify("Enter an email or phone number first"); notify("Personal invitation flow is ready for the next step"); setTarget(""); };
+  const send = () => { if (!target.trim()) return notify("Enter an email or phone number first"); notify("Personal invitations are not enabled yet. Share the institution code instead."); };
   const copyCode = async () => { try { if (!navigator.clipboard?.writeText) throw new Error("Clipboard unavailable"); await navigator.clipboard.writeText(account?.inviteCode || ""); notify("Invite code copied to clipboard"); } catch { notify("Invite code is ready to copy"); } };
   useEffect(() => { institutionRequest("/institutions/requests").then((data) => setRequests(data.requests || [])).catch((error) => setRequestError(error.message)).finally(() => setLoading(false)); }, []);
   const updateRequest = async (id, status) => {

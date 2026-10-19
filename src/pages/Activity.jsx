@@ -1,22 +1,13 @@
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Avatar } from "../components/ui";
+import { institutionRequest } from "../services/institutionApi";
+
+const timeAgo = value => { const date = new Date(value); if (Number.isNaN(date.getTime())) return "Recently"; const minutes = Math.max(1, Math.floor((Date.now() - date.getTime()) / 60000)); if (minutes < 60) return `${minutes} min${minutes === 1 ? "" : "s"} ago`; const hours = Math.floor(minutes / 60); if (hours < 24) return `${hours} hour${hours === 1 ? "" : "s"} ago`; const days = Math.floor(hours / 24); return `${days} day${days === 1 ? "" : "s"} ago`; };
+const categoryFor = event => event.startsWith("institution.question") || event.includes("level") || event.includes("category") ? "Content" : event.includes("join") || event.includes("member") ? "Access" : "Institution";
 
 export default function Activity() {
-  const events = [
-    ["AN", "Amaka Nwosu completed a practice set", "Mathematics · Primary 5 Gold", "10 min ago", "purple", "Learning"],
-    ["Q", "You published 8 new questions", "Basic Science · Question bank", "42 min ago", "pink", "Content"],
-    ["DB", "Daniel Bello requested to join", "Student request", "1 hr ago", "green", "Access"],
-    ["AO", "You created a new invite code", "GREENFIELD-26", "Yesterday", "yellow", "Invitations"]
-  ];
-
-  return <div className="activity-log-page">
-    <section className="activity-log-summary">
-      <div><span className="activity-summary-icon">↗</span><div><strong>Workspace activity</strong><p>A clear record of what is happening across your institution.</p></div></div>
-      <div className="activity-summary-stats"><span><strong>4</strong>recent events</span><span><strong>Today</strong>latest update</span></div>
-    </section>
-    <section className="activity-log-card">
-      <div className="activity-log-header"><div><h2>Recent activity</h2><p>Stay up to date with important actions and changes.</p></div><label className="activity-filter"><span>Showing</span><select defaultValue="all" aria-label="Filter activity"><option value="all">All activity</option><option value="learning">Learning</option><option value="content">Content</option><option value="access">Access</option></select></label></div>
-      <div className="activity-log-list">{events.map(([avatar, title, detail, time, color, category]) => <article className="activity-log-item" key={title}><div className={`activity-log-marker ${color}`}><Avatar initials={avatar} color={color} /></div><div className="activity-log-content"><div className="activity-log-title"><strong>{title}</strong><span className="activity-category">{category}</span></div><p>{detail}</p></div><time>{time}</time></article>)}</div>
-    </section>
-  </div>;
+  const [activities, setActivities] = useState([]), [filter, setFilter] = useState("all"), [loading, setLoading] = useState(true), [error, setError] = useState("");
+  useEffect(() => { institutionRequest("/institutions/activity").then(data => setActivities(data.activities || [])).catch(error => setError(error.message)).finally(() => setLoading(false)); }, []);
+  const visible = useMemo(() => filter === "all" ? activities : activities.filter(item => categoryFor(item.event_type).toLowerCase() === filter), [activities, filter]);
+  return <div className="activity-log-page"><section className="activity-log-summary"><div><span className="activity-summary-icon">↗</span><div><strong>Workspace activity</strong><p>A clear record of what is happening across your institution.</p></div></div><div className="activity-summary-stats"><span><strong>{activities.length}</strong>recent events</span><span><strong>{activities[0] ? timeAgo(activities[0].created_at) : "—"}</strong>latest update</span></div></section><section className="activity-log-card"><div className="activity-log-header"><div><h2>Recent activity</h2><p>Stay up to date with important actions and changes.</p></div><label className="activity-filter"><span>Showing</span><select value={filter} onChange={event => setFilter(event.target.value)} aria-label="Filter activity"><option value="all">All activity</option><option value="content">Content</option><option value="access">Access</option><option value="institution">Institution</option></select></label></div>{loading ? <div className="activity-empty-state">Loading live activity...</div> : error ? <div className="activity-empty-state">{error}</div> : <div className="activity-log-list">{visible.length ? visible.map(item => { const category = categoryFor(item.event_type); return <article className="activity-log-item" key={item.id}><div className={`activity-log-marker ${category.toLowerCase()}`}><Avatar initials={(item.actor_name || "IN").slice(0, 2).toUpperCase()} color={category.toLowerCase()} /></div><div className="activity-log-content"><div className="activity-log-title"><strong>{item.title}</strong><span className="activity-category">{category}</span></div><p>{item.description}</p></div><time>{timeAgo(item.created_at)}</time></article>; }) : <div className="activity-empty-state">No activity has been recorded yet.</div>}</div>}</section></div>;
 }
