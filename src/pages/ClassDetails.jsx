@@ -3,15 +3,16 @@ import { Badge, Button, Icon } from "../components/ui";
 
 export default function ClassDetails({ classItem, onBack, notify, selectPage }) {
   const className = classItem?.name || "Class workspace";
+  const labels = classItem?.structureLabels || { level: "Class", learner: "Learners", subject: "Subjects" };
   const subjects = classItem?.subjects || ["Mathematics", "English"];
   const learners = classItem?.learners || 0;
   const questions = classItem?.questions || 0;
   return <div className="class-workspace">
-    <button className="back-link" onClick={onBack}><Icon name="arrow-left" /> Back to classes & levels</button>
+    <button className="back-link" onClick={onBack}><Icon name="arrow-left" /> Back to {labels.level.toLowerCase()}s & structure</button>
     <section className="class-header-card">
-      <div><Badge tone="purple">CLASS WORKSPACE</Badge><h2>{className}</h2><p>Organise learning placement, monitor learners and manage the content assigned to this class.</p><div className="class-card-meta"><span>Active class</span><span>{subjects.length} subjects</span><span>Institution managed</span></div></div>
-      <div className="class-header-actions"><Button onClick={() => selectPage("students")} variant="outline">View learners</Button><Button onClick={() => notify(`${className} settings opened`)}>Class settings</Button></div>
-      <div className="class-stats"><span><strong>{learners}</strong> learners</span><span><strong>{questions}</strong> questions</span><span><strong>{classItem?.progress || 0}%</strong> average progress</span><span><strong>{subjects.length}</strong> learning areas</span></div>
+      <div><Badge tone="purple">{labels.level.toUpperCase()} WORKSPACE</Badge><h2>{className}</h2><p>Organise learning placement, monitor learners and manage the content assigned to this {labels.level.toLowerCase()}.</p><div className="class-card-meta"><span>Active {labels.level.toLowerCase()}</span><span>{subjects.length} {labels.subject.toLowerCase()}</span><span>Institution managed</span></div></div>
+      <div className="class-header-actions"><Button onClick={() => selectPage("students")} variant="outline">View learners</Button><Button onClick={() => notify(`${className} settings opened`)}>{labels.level} settings</Button></div>
+      <div className="class-stats"><span><strong>{learners}</strong> {labels.learner.toLowerCase()}</span><span><strong>{questions}</strong> questions</span><span><strong>{classItem?.progress || 0}%</strong> average progress</span><span><strong>{subjects.length}</strong> {labels.subject.toLowerCase()}</span></div>
     </section>
     <div className="class-flow-grid">
       <section className="panel class-flow-panel"><div className="panel-heading"><div><h3>Learning placement</h3><p>Subjects and content currently connected to this class.</p></div><button className="text-action" onClick={() => selectPage("questions")}>Question bank <Icon name="arrow" /></button></div>{subjects.map(subject => <div className="class-subject" key={subject}><div className="class-subject-head"><div><span className="class-subject-icon">✦</span><div><strong>{subject}</strong><small>{questions ? `${Math.max(1, Math.round(questions / subjects.length))} assigned questions` : "No questions assigned yet"}</small></div></div><Button variant="outline" className="button-small" onClick={() => selectPage("questions")}>Browse content</Button></div><div className="class-level"><div><span>↗</span><div><strong>Class learning track</strong><small>Available to every learner in {className}</small></div></div><button onClick={() => notify(`${subject} placement opened`)}>Manage placement <Icon name="arrow" /></button></div></div>)}</section>
