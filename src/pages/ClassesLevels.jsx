@@ -12,7 +12,7 @@ const initialCategories = [
 const initialLabels = { category: "Section", level: "Class", learner: "Learners", subject: "Learning areas" };
 
 export default function ClassesLevels({ notify, openClass }) {
-  const [activeTab, setActiveTab] = useState("levels");
+  const [activeTab, setActiveTab] = useState("categories");
   const [categories, setCategories] = useState(initialCategories);
   const [levels, setLevels] = useState(institutionClasses.map((item, index) => ({
     ...item,
@@ -60,6 +60,7 @@ export default function ClassesLevels({ notify, openClass }) {
 
   const saveLevel = (event) => {
     event.preventDefault();
+    if (!categories.length) { notify(`Create a ${labels.category.toLowerCase()} before creating a ${labels.level.toLowerCase()}.`); setActiveTab("categories"); setDialog(null); return; }
     const form = new FormData(event.currentTarget);
     const name = String(form.get("name") || "").trim();
     if (!name) return;
