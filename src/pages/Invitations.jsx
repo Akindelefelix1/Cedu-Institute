@@ -11,14 +11,27 @@ export default function Invitations({ notify }) {
   const [requestError, setRequestError] = useState("");
   const [updating, setUpdating] = useState(null);
   const [confirmation, setConfirmation] = useState(null);
-  const send = () => { if (!target.trim()) return notify("Enter an email or phone number first"); notify("Personal invitations are not enabled yet. Share the institution code instead."); };
+  const send = async () => {
+    const contact = target.trim();
+    if (!contact) return notify("Enter an email address or phone number first.");
+    try {
+      const data = await institutionRequest("/institutions/invitations", { method: "POST", body: JSON.stringify({ target: contact }) });
+      setTarget("");
+      if (data.channel === "phone") {
+        const phone = contact.replace(/[\s()-]/g, "");
+        const message = `Join ${account?.institutionName || "our institution"} on Cedu: ${data.inviteLink}`;
+        window.location.href = `sms:${phone}?body=${encodeURIComponent(message)}`;
+      }
+      notify(data.message);
+    } catch (error) { notify(error.message); }
+  };
   const copyCode = async () => { try { if (!navigator.clipboard?.writeText) throw new Error("Clipboard unavailable"); await navigator.clipboard.writeText(account?.inviteCode || ""); notify("Invite code copied to clipboard"); } catch { notify("Invite code is ready to copy"); } };
-  useEffect(() => { institutionRequest("/institutions/requests").then((data) => setRequests(data.requests || [])).catch((error) => setRequestError(error.message)).finally(() => setLoading(false)); }, []);
+  useEffect(() => { institutionRequest("/institutions/requests").then((data) => { const next = data.requests || []; setRequests(next); window.dispatchEvent(new CustomEvent("institution-pending-count-updated", { detail: next.filter(item => item.status === "pending").length })); }).catch((error) => setRequestError(error.message)).finally(() => setLoading(false)); }, []);
   const updateRequest = async (id, status) => {
     setUpdating({ id, status });
     try {
       const data = await institutionRequest(`/institutions/requests/${id}`, { method: "PATCH", body: JSON.stringify({ status }) });
-      setRequests((current) => current.map((item) => item.id === id ? { ...item, ...data.membership } : item));
+      setRequests((current) => { const next = current.map((item) => item.id === id ? { ...item, ...data.membership } : item); window.dispatchEvent(new CustomEvent("institution-pending-count-updated", { detail: next.filter(item => item.status === "pending").length })); return next; });
       notify(data.message);
     } catch (error) { notify(error.message); }
     finally { setUpdating(null); }

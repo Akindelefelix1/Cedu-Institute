@@ -35,6 +35,7 @@ export default function App() {
   const [toast, setToast] = useState("");
   const [welcome, setWelcome] = useState(null);
   const [account, setAccount] = useState(getInstitutionAccount);
+  const [pendingInvitationCount, setPendingInvitationCount] = useState(0);
   const [sessionChecked, setSessionChecked] = useState(() => !getInstitutionAccount() || !getInstitutionToken());
   const [studentProfile, setStudentProfile] = useState(studentFromLocation);
   const [classProfile, setClassProfile] = useState(classFromLocation);
@@ -49,8 +50,10 @@ export default function App() {
 
   useEffect(() => {
     const handleAccountUpdate = event => setAccount(event.detail);
+    const handlePendingCount = event => setPendingInvitationCount(Number(event.detail || 0));
     window.addEventListener("institution-account-updated", handleAccountUpdate);
-    return () => window.removeEventListener("institution-account-updated", handleAccountUpdate);
+    window.addEventListener("institution-pending-count-updated", handlePendingCount);
+    return () => { window.removeEventListener("institution-account-updated", handleAccountUpdate); window.removeEventListener("institution-pending-count-updated", handlePendingCount); };
   }, []);
 
   useEffect(() => {
@@ -66,6 +69,7 @@ export default function App() {
   useEffect(() => {
     if (!account || !getInstitutionToken()) return undefined;
     let active = true;
+    institutionRequest("/institutions/dashboard").then(data => { if (active) setPendingInvitationCount(Number(data.metrics?.pending_requests || 0)); }).catch(() => { if (active) setPendingInvitationCount(0); });
     institutionRequest("/institutions/questions").then(data => { if (active) setQuestions(data.questions || []); }).catch(() => { if (active) setQuestions([]); });
     return () => { active = false; };
   }, [account]);
@@ -91,24 +95,24 @@ export default function App() {
   const saveInstitutionQuestion = async question => { if (!question.levelId) throw new Error("This class is not connected to the institution structure. Refresh and try again."); await institutionRequest(`/institutions/structure/levels/${question.levelId}/questions`, { method: "POST", body: JSON.stringify({ subject: question.subject, questionText: question.text, explanation: question.explanation, options: question.options, status: "draft" }) }); setQuestions(current => [{ ...question, status: "Draft" }, ...current]); setModal(null); notify("Question saved successfully"); };
 
   if (welcome === "learner") return <LearnerPreview onBack={() => setWelcome(null)} onOnboarding={() => setWelcome("auth")} />;
-  if (!sessionChecked) return <main className="app-error-state"><div><span>Ã¢â‚¬Â¦</span><h1>Restoring your workspace</h1><p>Checking your secure institution session.</p></div></main>;
+  if (!sessionChecked) return <main className="app-error-state"><div><span>…</span><h1>Restoring your workspace</h1><p>Checking your secure institution session.</p></div></main>;
   if (!account || welcome === "auth") return <AuthPage onOpen={() => setWelcome(null)} onAuthenticated={nextAccount => { setAccount(nextAccount); setWelcome(null); }} />;
 
   return <div className="app-shell">
     <aside className={`sidebar ${mobileOpen ? "sidebar-open" : ""}`}>
       <button className="sidebar-brand" onClick={() => setWelcome("auth")} aria-label="Open sign in"><img src={logo} alt="Cedu" /><span className="brand-pill">INSTITUTION</span></button>
-      <div className="institution-switch"><Avatar initials={(account.institutionName || "IN").slice(0, 2).toUpperCase()} color="yellow" /><div><strong>{account.institutionName}</strong><span>{account.publicAccess ? "Public Ã‚Â· request to join" : `Invite only Ã‚Â· ${account.inviteCode || "code unavailable"}`}</span></div></div>
-      <nav className="nav-groups">{nav.map(group => <div className="nav-group" key={group.label}><div className="nav-label">{group.label}</div>{group.items.map(([key, label]) => <button className={`nav-item ${page === key ? "active" : ""}`} key={key} onClick={() => selectPage(key)}><Icon name={key} /><span>{label}</span>{key === "invite" && <i className="nav-dot">3</i>}</button>)}</div>)}</nav>
-      <div className="sidebar-bottom"><button className="logout" onClick={() => confirm("Sign out of Cedu?", "You will return to the sign-in page.", "Sign out", () => { clearInstitutionSession(); setAccount(null); setWelcome(null); })}>Ã¢â€ Âª Sign out</button></div>
+      <div className="institution-switch"><Avatar initials={(account.institutionName || "IN").slice(0, 2).toUpperCase()} color="yellow" /><div><strong>{account.institutionName}</strong><span>{account.publicAccess ? "Public · request to join" : `Invite only · ${account.inviteCode || "code unavailable"}`}</span></div></div>
+      <nav className="nav-groups">{nav.map(group => <div className="nav-group" key={group.label}><div className="nav-label">{group.label}</div>{group.items.map(([key, label]) => <button className={`nav-item ${page === key ? "active" : ""}`} key={key} onClick={() => selectPage(key)}><Icon name={key} /><span>{label}</span>{key === "invite" && pendingInvitationCount > 0 && <i className="nav-dot">{pendingInvitationCount > 99 ? "99+" : pendingInvitationCount}</i>}</button>)}</div>)}</nav>
+      <div className="sidebar-bottom"><button className="logout" onClick={() => confirm("Sign out of Cedu?", "You will return to the sign-in page.", "Sign out", () => { clearInstitutionSession(); setAccount(null); setWelcome(null); })}>↪ Sign out</button></div>
     </aside>
     {mobileOpen && <button className="mobile-scrim" onClick={() => setMobileOpen(false)} aria-label="Close menu" />}
     <main className="main-area">
-      <header className="topbar"><button className="mobile-menu" onClick={() => setMobileOpen(true)} aria-label="Open navigation">Ã¢ËœÂ°</button><div className="breadcrumbs"><span>{account.institutionName}</span><b>/</b><strong>{studentProfile ? "Student profile" : classProfile ? "Class workspace" : titles[page]}</strong></div><div className="top-actions"><button className="preview-button" onClick={() => setWelcome("learner")}>Preview learner view <Icon name="arrow" /></button><button className="icon-button" onClick={() => notify("You have 3 new notifications")} aria-label="View notifications"><Icon name="bell" /><i /></button><div className="profile"><Avatar initials={(account.ownerName || "IN").slice(0, 2).toUpperCase()} /><div><strong>{account.ownerName}</strong><span>Institution owner</span></div><button aria-label="Sign out" onClick={() => { clearInstitutionSession(); setAccount(null); setWelcome(null); }}>Ã¢Å’â€ž</button></div></div></header>
+      <header className="topbar"><button className="mobile-menu" onClick={() => setMobileOpen(true)} aria-label="Open navigation">☰</button><div className="breadcrumbs"><span>{account.institutionName}</span><b>/</b><strong>{studentProfile ? "Student profile" : classProfile ? "Class workspace" : titles[page]}</strong></div><div className="top-actions"><button className="preview-button" onClick={() => setWelcome("learner")}>Preview learner view <Icon name="arrow" /></button><button className="icon-button" onClick={() => notify("No new notifications") } aria-label="View notifications"><Icon name="bell" /></button><div className="profile"><Avatar initials={(account.ownerName || "IN").slice(0, 2).toUpperCase()} /><div><strong>{account.ownerName}</strong><span>Institution owner</span></div><button aria-label="Sign out" onClick={() => { clearInstitutionSession(); setAccount(null); setWelcome(null); }}>⌄</button></div></div></header>
       <div className="page-content">
         {studentProfile ? <StudentProfile student={studentProfile} onBack={closeProfile} notify={notify} /> : classProfile ? <ClassDetailsPage classItem={classProfile} onBack={closeClass} notify={notify} selectPage={selectPage} setModal={setModal} /> : <><PageHeading page={page} onAction={setModal} account={account} />{page === "dashboard" && <DashboardPage selectPage={selectPage} setModal={setModal} notify={notify} confirm={confirm} />}{page === "students" && <StudentsPage notify={notify} />}{page === "questions" && <QuestionBankPage questions={questions} setQuestions={setQuestions} setModal={setModal} notify={notify} confirm={confirm} onDelete={async id => { await institutionRequest(`/institutions/questions/${id}`, { method: "DELETE" }); setQuestions(current => current.filter(item => item.id !== id)); notify("Question deleted"); }} />}{page === "structure" && <ClassesLevelsPage notify={notify} openClass={openClass} />}{page === "practice" && <PracticeSessionsPage notify={notify} />}{page === "resources" && <ResourcesPage notify={notify} />}{page === "invite" && <InvitationsPage notify={notify} />}{page === "staff" && <StaffPermissionsPage notify={notify} />}{page === "activity" && <ActivityPage />}{page === "settings" && <SettingsPage notify={notify} />}</>}
       </div>
     </main>
-    {(modal === "question" || editingQuestion) && <RichQuestionStudio initialQuestion={editingQuestion} onClose={() => setModal(null)} onSave={saveQuestion} />}{modal?.type === "institutionQuestion" && <InstitutionQuestionModal levelId={modal.levelId} section={modal.section} className={modal.className} learningArea={modal.learningArea} onClose={() => setModal(null)} onSave={saveInstitutionQuestion} />}{modal === "invite" && <InviteCodeModal onClose={() => setModal(null)} onSave={() => { setModal(null); notify("New invite code generated"); }} />}{modal === "student" && <StudentInviteModal onClose={() => setModal(null)} onSave={() => { setModal(null); notify("Family invite sent"); }} />}{modal === "staff" && <StaffInviteModal onClose={() => setModal(null)} onSave={role => { setModal(null); notify(`${role} invitation sent`); }} />}{confirmation && <ConfirmDialog {...confirmation} onClose={() => setConfirmation(null)} onConfirm={() => { setConfirmation(null); confirmation.onConfirm(); }} />}{toast && <div className="toast" role="status"><span className="toast-check">Ã¢Å“â€œ</span>{toast}</div>}
+    {(modal === "question" || editingQuestion) && <RichQuestionStudio initialQuestion={editingQuestion} onClose={() => setModal(null)} onSave={saveQuestion} />}{modal?.type === "institutionQuestion" && <InstitutionQuestionModal levelId={modal.levelId} section={modal.section} className={modal.className} learningArea={modal.learningArea} onClose={() => setModal(null)} onSave={saveInstitutionQuestion} />}{modal === "invite" && <InviteCodeModal onClose={() => setModal(null)} onSave={() => { setModal(null); notify("New invite code generated"); }} />}{modal === "student" && <StudentInviteModal onClose={() => setModal(null)} onSave={() => { setModal(null); notify("Family invite sent"); }} />}{modal === "staff" && <StaffInviteModal onClose={() => setModal(null)} onSave={role => { setModal(null); notify(`${role} invitation sent`); }} />}{confirmation && <ConfirmDialog {...confirmation} onClose={() => setConfirmation(null)} onConfirm={() => { setConfirmation(null); confirmation.onConfirm(); }} />}{toast && <div className="toast" role="status"><span className="toast-check">✓</span>{toast}</div>}
   </div>;
 }
 

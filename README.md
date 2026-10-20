@@ -7,7 +7,7 @@ access the siblings folders from here for all  end to end wiring
 
 
 
-UI-only React/Vite mock for the Cedu institution and teacher workspace.
+React/Vite institution workspace connected to the shared CeduGames backend.
 
 ## Run locally
 
@@ -16,7 +16,15 @@ npm install
 npm run dev
 ```
 
-The current screens use local demo state so the design and flow can be reviewed before API integration.
+Set `VITE_API_URL` to the URL of `Cedugames_BE` when running against a local or deployed API. The institution app uses the same backend consumed by `Cedugames_Users` and `Cedugames_Admin`.
+
+## Related workspaces
+
+- `C:\Users\akind\Desktop\Cedugames_BE` — Express/TypeScript API and migrations
+- `C:\Users\akind\Desktop\Cedugames_Admin` — Super Admin React app
+- `C:\Users\akind\Desktop\Cedugames_Users` — learner React/Vite app
+
+Run each workspace from its own folder. The institution flow is end-to-end for authentication, dashboard metrics, join requests, learners, learning structure, question creation/deletion, activity, visibility, and profile updates.
 
 ## Included flows
 
