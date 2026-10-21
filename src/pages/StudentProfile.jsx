@@ -1,17 +1,36 @@
-import React, { useState } from "react";
-import { Badge, Button, Icon } from "../components/ui";
-import { Dialog } from "../components/modals";
+import React, { useEffect, useState } from "react";
+import { Avatar, Badge, Icon } from "../components/ui";
+import { institutionRequest } from "../services/institutionApi";
 
-export default function StudentProfile({ student, onBack, notify }) {
-  const [status, setStatus] = useState(student.status);
-  const [notice, setNotice] = useState("");
-  const [pendingAction, setPendingAction] = useState(null);
+const formatDate = value => value ? new Date(value).toLocaleString() : "Not available";
 
-  const completeAction = () => {
-    if (pendingAction === "deactivate") { setStatus("Inactive"); setNotice(`${student.name} is now deactivated. Their records are preserved.`); }
-    if (pendingAction === "remove") { setStatus("Removed"); setNotice(`${student.name} was removed from this institution.`); }
-    setPendingAction(null);
-  };
+export default function StudentProfile({ studentId, institutionName, onBack }) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  return <div className="student-profile-page"><div className="student-profile-inner"><button className="back-link" onClick={onBack}><Icon name="arrow-left" /> Back to students</button><section className="student-profile-hero"><div className="student-profile-identity"><span>{student.initials}</span><div><p>STUDENT PROFILE</p><h1>{student.name}</h1><small>{student.className} · Greenfield Academy</small></div></div><Badge tone={status === "Active" ? "green" : "gray"}>{status}</Badge></section>{notice && <section className="panel profile-notice" role="status"><strong>Account action completed</strong><p>{notice}</p></section>}<div className="profile-stat-grid">{[["Overall progress", `${student.progress}%`, "Across assigned practice"], ["Practice sessions", "18", "12 completed this month"], ["Average score", `${Math.min(100, student.progress + 8)}%`, "Last 30 days"], ["Current streak", "5 days", "Keep the momentum going"]].map(([label, value, note]) => <div className="panel" key={label}><span>{label}</span><strong>{value}</strong><small>{note}</small></div>)}</div><section className="panel profile-controls"><div className="panel-header"><div><h2>Institution account controls</h2><p>Manage this student's membership in Greenfield Academy.</p></div><Badge tone={status === "Active" ? "green" : "gray"}>{status}</Badge></div><div className="profile-action-row profile-action-warning"><div><strong>Deactivate student</strong><span>Temporarily blocks access while preserving progress and history.</span></div><button className="button" onClick={() => setPendingAction("deactivate")} disabled={status === "Inactive" || status === "Removed"}>{status === "Inactive" ? "Deactivated" : "Deactivate student"}</button></div><div className="profile-action-row profile-action-danger"><div><strong>Remove from institution</strong><span>Ends this student's institution access.</span></div><button className="button" onClick={() => setPendingAction("remove")} disabled={status === "Removed"}>{status === "Removed" ? "Removed" : "Remove student"}</button></div></section><section className="panel"><div className="panel-header"><div><h2>Student details</h2><p>Account, learning and access information.</p></div></div><div className="profile-detail-grid">{[["Class", student.className], ["Last active", student.lastSeen], ["Joined", "Sep 20, 2026"], ["Parent contact", "Available to institution owner"]].map(([label, value]) => <div key={label}><span>{label}</span><strong>{value}</strong></div>)}</div></section><section className="panel"><div className="panel-header"><div><h2>Activity history</h2><p>Recent events across this learner's institution journey.</p></div><button onClick={() => notify("Full student activity history opened")}>View full history <Icon name="arrow" /></button></div><div className="profile-history-empty"><h3>History will appear here</h3><p>Session history, parent communication and class changes will populate as activity is connected.</p></div></section></div>{pendingAction && <Dialog title={pendingAction === "remove" ? "Remove student from institution?" : "Deactivate student?"} subtitle={pendingAction === "remove" ? "This will end the learner's access to this institution." : "The learner will lose access, but progress and history will be preserved."} onClose={() => setPendingAction(null)}><div className="feedback-dialog-note"><span>{pendingAction === "remove" ? "!" : "i"}</span><p>{pendingAction === "remove" ? `${student.name} will be removed from ${student.className}. This action affects institution access only.` : `${student.name} will be marked inactive until an institution administrator restores access.`}</p></div><div className="modal-footer"><button className="button button-outline" onClick={() => setPendingAction(null)}>Cancel</button><Button variant={pendingAction === "remove" ? "danger" : "primary"} onClick={completeAction}>{pendingAction === "remove" ? "Remove student" : "Deactivate student"}</Button></div></Dialog>}</div>;
+  useEffect(() => {
+    let active = true;
+    setData(null);
+    setLoading(true);
+    setError("");
+    institutionRequest(`/institutions/students/${encodeURIComponent(studentId)}`)
+      .then(result => { if (active) setData(result); })
+      .catch(requestError => { if (active) setError(requestError.message); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [studentId]);
+
+  const student = data?.student;
+  const summary = data?.summary;
+
+  return <div className="student-profile-page"><div className="student-profile-inner">
+    <button className="back-link" onClick={onBack}><Icon name="arrow-left" /> Back to students</button>
+    {loading ? <section className="panel loading-state" role="status"><span className="loading-spinner" aria-hidden="true" />Loading student details...</section> : error ? <section className="panel no-results" role="alert">{error}</section> : student && <>
+      <section className="student-profile-hero"><div className="student-profile-identity"><Avatar initials={student.initials} /><div><p>STUDENT PROFILE</p><h1>{student.name}</h1><small>{student.username ? `@${student.username}` : "Learner"} · {institutionName}</small></div></div><Badge tone="green">{student.status}</Badge></section>
+      <div className="profile-stat-grid">{[["Practice attempts", summary.attempts, "Recorded gameplay sessions"], ["Average score", summary.averageScore == null ? "No data" : `${summary.averageScore}%`, "Across recorded attempts"], ["Passed", summary.passed, "Successful attempts"], ["Total XP", student.totalXp, "Earned in Cedu"]].map(([label, value, note]) => <div className="panel" key={label}><span>{label}</span><strong>{value}</strong><small>{note}</small></div>)}</div>
+      <section className="panel"><div className="panel-header"><div><h2>Student details</h2><p className="panel-copy">Account and institution membership information.</p></div></div><div className="profile-detail-grid">{[["Email", student.email || "Not provided"], ["Phone", student.phone || "Not provided"], ["Age", student.age ?? "Not provided"], ["Class", "Not assigned"], ["Joined institution", formatDate(student.joinedAt)], ["Last practice activity", formatDate(student.lastPracticeAt)], ["Membership", student.status], ["Username", student.username ? `@${student.username}` : "Not set"]].map(([label, value]) => <div key={label}><span>{label}</span><strong>{value}</strong></div>)}</div></section>
+      <section className="panel"><div className="panel-header"><div><h2>Recent learning activity</h2><p className="panel-copy">Latest recorded attempts in Cedu.</p></div></div>{data.recentActivity.length ? <div className="student-activity-list">{data.recentActivity.map(item => <div className="student-activity-item" key={item.id}><div><strong>{item.activity}</strong><span>{item.levelName || "Learning activity"}</span></div><div><Badge tone={item.passed ? "green" : "yellow"}>{item.score}%</Badge><small>{formatDate(item.createdAt)}</small></div></div>)}</div> : <div className="empty-panel">No learning activity has been recorded yet.</div>}</section>
+    </>}
+  </div></div>;
 }

@@ -6,6 +6,17 @@ PS C:\Users\akind\Desktop\Cedugames_Users>
 access the siblings folders from here for all  end to end wiring
 
 
+Institution questions now use a rich editor matching the Admin workflow: formatted text, media attachments, shapes, answer explanations, read-aloud, and draft or publish status. The selected class and learning area stay fixed as the question’s placement.
+The Question Bank’s Preview button now opens the saved question with its options, correct answer, and attachments.
+
+Institution questions now use a rich editor matching the Admin workflow: formatted text, media attachments, shapes, answer explanations, read-aloud, and draft or publish status. The selected class and learning area stay fixed as the question’s placement.
+The Question Bank’s Preview button now opens the saved question with its options, correct answer, and attachments.
+
+Class settings and placement now save through the level update API; renaming a class also updates its current URL.
+“View class activity” now opens activity filtered to that class using its levelId.
+Dashboard and question-bank add actions now lead to class placement, where questions are saved to the institution. They no longer open an editor that only changed local state.
+Rich question editing now initializes the correct answer, publish status, media, and shapes from saved question data.
+
 
 React/Vite institution workspace connected to the shared CeduGames backend.
 

@@ -6,7 +6,8 @@ export async function institutionRequest(path, options = {}) {
   const controller = new AbortController();
   const timeout = window.setTimeout(() => controller.abort(), 30000);
   try {
-    const response = await fetch(`${API_URL}${path}`, { ...options, signal: options.signal || controller.signal, headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}), ...options.headers } });
+    const isMultipart = typeof FormData !== "undefined" && options.body instanceof FormData;
+    const response = await fetch(`${API_URL}${path}`, { ...options, signal: options.signal || controller.signal, headers: { ...(!isMultipart ? { "Content-Type": "application/json" } : {}), ...(token ? { Authorization: `Bearer ${token}` } : {}), ...options.headers } });
     const data = await response.json().catch(() => ({}));
     if (response.status === 401 && token) clearInstitutionSession();
     if (!response.ok) throw new Error(data.message || data.errors?.[0]?.message || "Something went wrong. Please try again.");
