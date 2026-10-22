@@ -1,40 +1,53 @@
-import React, { useState } from "react";
-import { Badge, Button } from "../components/ui";
-import { Dialog } from "../components/modals";
+import React, { useEffect, useMemo, useState } from "react";
+import { Badge, Button, Pagination } from "../components/ui";
+import { institutionRequest } from "../services/institutionApi";
 
-const starterResources = [
-  ["Shapes and colours", "Mathematics", 2, "blue"],
-  ["Plants around us", "Basic Science", 3, "green"],
-  ["Counting objects", "Mathematics", 4, "purple"],
-  ["Healthy habits", "Basic Science", 5, "pink"],
-  ["Community helpers", "Mathematics", 6, "yellow"],
-  ["Weather cards", "Basic Science", 7, "blue"]
-];
+export default function Resources() {
+  const [questions, setQuestions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [page, setPage] = useState(1);
+  const pageSize = 12;
 
-export default function Resources({ notify }) {
-  const [resources, setResources] = useState(starterResources);
-  const [dialog, setDialog] = useState(null);
-  const [accessRequested, setAccessRequested] = useState(false);
+  useEffect(() => {
+    let active = true;
+    institutionRequest("/institutions/questions")
+      .then(data => { if (active) setQuestions(data.questions || []); })
+      .catch(requestError => { if (active) setError(requestError.message); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, []);
 
-  const addResource = (name, subject) => {
-    setResources(current => [[name, subject, 0, "purple"], ...current]);
-    setDialog(null);
-    notify(`${name} uploaded to your resource bank`);
+  const assets = useMemo(() => questions.flatMap(question => {
+    const attached = [];
+    if (question.mediaUrl) attached.push({ url: question.mediaUrl, type: question.mediaType, label: "Question media" });
+    (question.options || []).forEach((option, index) => {
+      if (option.mediaUrl) attached.push({ url: option.mediaUrl, type: option.mediaType, label: `Option ${String.fromCharCode(65 + index)} media` });
+    });
+    return attached.map((asset, index) => ({ ...asset, id: `${question.id}-${index}`, question: question.text, subject: question.subject, level: question.level }));
+  }), [questions]);
+  const pageCount = Math.max(1, Math.ceil(assets.length / pageSize));
+  const currentPage = Math.min(page, pageCount);
+  const pageAssets = assets.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
+  const openQuestions = () => {
+    window.history.pushState({}, "", "/question-bank");
+    window.dispatchEvent(new PopStateEvent("popstate"));
   };
 
-  return <div className="content-stack"><section className="resource-access"><div className="resource-symbol">▤</div><div><Badge>CEDU RESOURCE BANK</Badge><h2>Bring more variety to your lessons</h2><p>Request access to the admin resource bank to reuse images and learning materials in your questions.</p></div><Button variant="soft" onClick={() => accessRequested ? notify("Your resource bank request is already pending") : setDialog("access")}>{accessRequested ? "Request pending" : "Request access"}</Button></section><div className="resource-toolbar"><div><h2>Your institution resources</h2><p>Reusable resources uploaded by your team.</p></div><Button onClick={() => setDialog("upload")} icon="plus">Upload resource</Button></div><div className="resource-grid">{resources.map(([name, subject, uses, color], index) => <div className={`resource-card resource-${index + 1}`} key={`${name}-${index}`}><div className={`resource-art resource-art-${color}`}>▤</div><div><strong>{name}</strong><span>{subject} · Used {uses} times</span></div><button onClick={() => setDialog({ type: "preview", resource: { name, subject, uses } })}>Preview</button></div>)}</div>
-    {dialog === "access" && <Dialog title="Request resource bank access" subtitle="Tell Cedu how your institution plans to use shared learning materials." onClose={() => setDialog(null)}><form onSubmit={event => { event.preventDefault(); setAccessRequested(true); setDialog(null); notify("Resource bank access request submitted"); }}><label>Reason for access<textarea required rows="4" placeholder="For example: We want to add approved images to Primary 5 science questions." /></label><label>Content area<select defaultValue="All subjects"><option>All subjects</option><option>Mathematics</option><option>Basic Science</option><option>English</option></select></label><div className="modal-footer"><button type="button" className="button button-outline" onClick={() => setDialog(null)}>Cancel</button><Button type="submit">Submit request</Button></div></form></Dialog>}
-    {dialog === "upload" && <UploadResourceDialog onClose={() => setDialog(null)} onSave={addResource} />}
-    {dialog?.type === "preview" && <ResourcePreviewDialog resource={dialog.resource} onClose={() => setDialog(null)} onUse={() => { setDialog(null); window.history.pushState({}, "", "/question-bank"); window.dispatchEvent(new PopStateEvent("popstate")); notify("Question bank opened to use this resource"); }} />}
+  return <div className="content-stack">
+    <section className="resource-toolbar">
+      <div><h2>Media attached to questions</h2><p>These files were uploaded with institution questions and are available to learners when those questions are published.</p></div>
+      <Button onClick={openQuestions}>Manage questions</Button>
+    </section>
+    {loading ? <div className="loading-state" role="status"><span className="loading-spinner" aria-hidden="true" />Loading institution question media…</div>
+      : error ? <div className="app-error-state"><div><h2>Media library unavailable</h2><p>{error}</p><Button onClick={() => window.location.reload()}>Try again</Button></div></div>
+      : assets.length ? <><div className="resource-grid">{pageAssets.map(asset => <article className="resource-card" key={asset.id}>
+        <div className="resource-art">{asset.type === "image" ? <img src={asset.url} alt="" /> : <span aria-hidden="true">▤</span>}</div>
+        <div className="resource-card-copy"><strong>{asset.label}</strong><span>{asset.subject} · {asset.level}</span><small title={asset.question}>{asset.question}</small></div>
+        <a href={asset.url} target="_blank" rel="noreferrer">Open file</a>
+      </article>)}</div><Pagination total={assets.length} page={currentPage} pageSize={pageSize} onPageChange={setPage} label="files" /></>
+      : <div className="empty-panel"><h3>No question media uploaded yet</h3><p>Add an image, audio clip, video, or document from the question editor. It will appear here after the question is saved.</p><Button onClick={openQuestions}>Open question bank</Button></div>}
+    {!loading && !error && <p className="resource-count"><Badge tone="purple">{assets.length} attached file{assets.length === 1 ? "" : "s"}</Badge></p>}
   </div>;
-}
-
-function UploadResourceDialog({ onClose, onSave }) {
-  const [name, setName] = useState("");
-  const [subject, setSubject] = useState("Mathematics");
-  return <Dialog title="Upload a resource" subtitle="Add reusable learning material for your institution." onClose={onClose}><form onSubmit={event => { event.preventDefault(); if (name.trim()) onSave(name.trim(), subject); }}><label>Resource name<input autoFocus required value={name} onChange={event => setName(event.target.value)} placeholder="e.g. Fractions worksheet" /></label><label>Subject<select value={subject} onChange={event => setSubject(event.target.value)}><option>Mathematics</option><option>Basic Science</option><option>English</option></select></label><label>File<input type="file" accept="image/*,.pdf,.doc,.docx" /></label><div className="modal-footer"><button type="button" className="button button-outline" onClick={onClose}>Cancel</button><Button type="submit">Upload resource</Button></div></form></Dialog>;
-}
-
-function ResourcePreviewDialog({ resource, onClose, onUse }) {
-  return <Dialog title={resource.name} subtitle={`${resource.subject} · Institution resource`} onClose={onClose}><div className="resource-preview-art">▤</div><div className="resource-preview-meta"><span>Used in questions</span><strong>{resource.uses} times</strong></div><p className="resource-preview-copy">Preview this approved learning material before adding it to a question or practice activity.</p><div className="modal-footer"><button className="button button-outline" onClick={onClose}>Close</button><Button onClick={onUse}>Use in question</Button></div></Dialog>;
 }

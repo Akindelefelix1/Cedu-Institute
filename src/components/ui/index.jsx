@@ -32,3 +32,18 @@ export function Button({ children, variant = "primary", onClick, icon, type = "b
 export function Avatar({ initials, color = "purple" }) {
   return <span className={`avatar avatar-${color}`}>{initials}</span>;
 }
+
+export function Pagination({ total, page, pageSize = 10, onPageChange, label = "items" }) {
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  if (total <= pageSize) return null;
+  const start = (page - 1) * pageSize + 1;
+  const end = Math.min(page * pageSize, total);
+  return <nav className="list-pagination" aria-label={`${label} pagination`}>
+    <span>Showing {start}–{end} of {total} {label}</span>
+    <div>
+      <button type="button" onClick={() => onPageChange(page - 1)} disabled={page <= 1}>Previous</button>
+      <span aria-live="polite">Page {page} of {totalPages}</span>
+      <button type="button" onClick={() => onPageChange(page + 1)} disabled={page >= totalPages}>Next</button>
+    </div>
+  </nav>;
+}
