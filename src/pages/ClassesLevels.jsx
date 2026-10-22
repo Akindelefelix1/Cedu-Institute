@@ -6,10 +6,38 @@ import CategoryLevels from "./CategoryLevels";
 
 const defaultLabels = { category: "Section", level: "Class", learner: "Learners", subject: "Learning areas" };
 const structureHelp = {
-  category: { title: "Broad grouping", description: "The top level that groups related learner placements.", diagram: <><span className="structure-help-node primary">Category · Primary</span><span className="structure-help-branch">↓</span><div className="structure-help-children"><span className="structure-help-node">Year 1</span><span className="structure-help-node">Year 2</span></div></> },
-  level: { title: "Learner placement", description: "A class or group inside a broad grouping. Learners and learning areas are connected here.", diagram: <><div className="structure-help-path"><span className="structure-help-node">Primary</span><b>›</b><span className="structure-help-node primary">Year 2</span></div><span className="structure-help-branch">↓</span><span className="structure-help-node">24 learners · Mathematics</span></> },
-  learner: { title: "People count", description: "The word your institution uses for each learner, such as Player or Student. Counts show how many people are in a placement.", diagram: <div className="structure-help-count"><strong>24</strong><span>Players in Year 2</span></div> },
-  subject: { title: "Content grouping", description: "The learning area or subject taught within a learner placement.", diagram: <><div className="structure-help-path"><span className="structure-help-node">Year 2</span><b>›</b><span className="structure-help-node primary">Learning areas</span></div><div className="structure-help-children"><span className="structure-help-node">Mathematics</span><span className="structure-help-node">English</span></div></> },
+  category: {
+    title: "Broad grouping",
+    description: "The top-level stage or programme. Put related learner placements inside it, then assign people and learning areas within each placement.",
+    examples: [
+      { label: "Primary grouping", chain: ["Primary", "Year 1", "24 Students", "Mathematics"] },
+      { label: "Secondary grouping", chain: ["Secondary", "JSS 1", "18 Students", "Basic Science"] },
+    ],
+  },
+  level: {
+    title: "Learner placement",
+    description: "A specific class, cohort, or group inside a broad grouping. Learners are enrolled here, and its learning areas and questions are organised here too.",
+    examples: [
+      { label: "Primary example", chain: ["Primary", "Year 2", "24 Students", "Mathematics"] },
+      { label: "Secondary example", chain: ["Secondary", "JSS 1", "18 Students", "English"] },
+    ],
+  },
+  learner: {
+    title: "People count",
+    description: "Choose the word your institution uses for one learner. The number is entered on each placement; this word identifies who is being counted.",
+    examples: [
+      { label: "School", chain: ["Primary", "Year 2", "24 Students", "Mathematics"] },
+      { label: "Learning club", chain: ["Chess Club", "Beginners", "12 Players", "Strategy"] },
+    ],
+  },
+  subject: {
+    title: "Content grouping",
+    description: "The subject or learning area within a placement. Questions are assigned to one of these areas so learners can practise the right content.",
+    examples: [
+      { label: "Primary placement", chain: ["Primary", "Year 2", "24 Students", "Mathematics"] },
+      { label: "Secondary placement", chain: ["Secondary", "JSS 1", "18 Students", "Basic Science"] },
+    ],
+  },
 };
 
 function StructureFieldHelp({ name, open, onToggle }) {
@@ -17,7 +45,7 @@ function StructureFieldHelp({ name, open, onToggle }) {
   const tooltipId = `structure-help-${name}`;
   return <span className={`structure-help-wrap${open ? " is-open" : ""}`}>
     <button type="button" className="structure-help-mark" aria-label={`Explain ${help.title}`} aria-expanded={open} aria-describedby={tooltipId} onClick={event => { event.preventDefault(); onToggle(); }}>i</button>
-    <span className="structure-help-popover" id={tooltipId} role="tooltip"><strong>{help.title}</strong><span>{help.description}</span><small>Example</small><span className="structure-help-diagram">{help.diagram}</span></span>
+    <span className="structure-help-popover" id={tooltipId} role="tooltip"><strong>{help.title}</strong><span>{help.description}</span><small>Two examples · follow the path from left to right</small><span className="structure-help-examples">{help.examples.map(example => <span className="structure-help-example" key={example.label}><b>{example.label}</b><span className="structure-help-chain">{example.chain.map((item, index) => <React.Fragment key={`${example.label}-${item}`}>{index > 0 && <i aria-hidden="true">›</i>}<em className={index === 0 ? "root" : index === example.chain.length - 1 ? "leaf" : ""}>{item}</em></React.Fragment>)}</span></span>)}</span></span>
   </span>;
 }
 
