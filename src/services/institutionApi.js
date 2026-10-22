@@ -10,7 +10,7 @@ export async function institutionRequest(path, options = {}) {
     const response = await fetch(`${API_URL}${path}`, { ...options, signal: options.signal || controller.signal, headers: { ...(!isMultipart ? { "Content-Type": "application/json" } : {}), ...(token ? { Authorization: `Bearer ${token}` } : {}), ...options.headers } });
     const data = await response.json().catch(() => ({}));
     if (response.status === 401 && token) clearInstitutionSession();
-    if (!response.ok) throw new Error(data.message || data.errors?.[0]?.message || "Something went wrong. Please try again.");
+    if (!response.ok) { const requestError = new Error(data.message || data.errors?.[0]?.message || "Something went wrong. Please try again."); requestError.errors = data.errors || []; throw requestError; }
     return data;
   } catch (error) {
     if (error?.name === "AbortError") throw new Error("The server took too long to respond. Please try again.");
