@@ -6,6 +6,9 @@ PS C:\Users\akind\Desktop\Cedugames_Users>
 access the siblings folders from here for all  end to end wiring
 
 
+merge every commit on staging branch to the main banch on all the repos so that github stays updated on both branches across all repo
+
+
 
 React/Vite institution workspace connected to the shared CeduGames backend.
 

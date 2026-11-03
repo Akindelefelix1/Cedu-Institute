@@ -5,9 +5,12 @@ export async function institutionRequest(path, options = {}) {
   const token = localStorage.getItem(INSTITUTION_TOKEN_KEY);
   const controller = new AbortController();
   const timeout = window.setTimeout(() => controller.abort(), 30000);
+  const abortFromCaller = () => controller.abort();
+  if (options.signal?.aborted) controller.abort();
+  else options.signal?.addEventListener("abort", abortFromCaller, { once: true });
   try {
     const isMultipart = typeof FormData !== "undefined" && options.body instanceof FormData;
-    const response = await fetch(`${API_URL}${path}`, { ...options, signal: options.signal || controller.signal, headers: { ...(!isMultipart ? { "Content-Type": "application/json" } : {}), ...(token ? { Authorization: `Bearer ${token}` } : {}), ...options.headers } });
+    const response = await fetch(`${API_URL}${path}`, { ...options, signal: controller.signal, headers: { ...(!isMultipart ? { "Content-Type": "application/json" } : {}), ...(token ? { Authorization: `Bearer ${token}` } : {}), ...options.headers } });
     const data = await response.json().catch(() => ({}));
     if (response.status === 401 && token) clearInstitutionSession();
     if (!response.ok) { const requestError = new Error(data.message || data.errors?.[0]?.message || "Something went wrong. Please try again."); requestError.errors = data.errors || []; throw requestError; }
@@ -16,7 +19,7 @@ export async function institutionRequest(path, options = {}) {
     if (error?.name === "AbortError") throw new Error("The server took too long to respond. Please try again.");
     if (error?.name === "TypeError") throw new Error("Unable to reach Cedu right now. Check your connection and try again.");
     throw error;
-  } finally { window.clearTimeout(timeout); }
+  } finally { window.clearTimeout(timeout); options.signal?.removeEventListener("abort", abortFromCaller); }
 }
 export function saveInstitutionSession(token, account) { localStorage.setItem(INSTITUTION_TOKEN_KEY, token); localStorage.setItem(INSTITUTION_ACCOUNT_KEY, JSON.stringify(account)); }
 export function getInstitutionAccount() { try { return JSON.parse(localStorage.getItem(INSTITUTION_ACCOUNT_KEY) || "null"); } catch { return null; } }
