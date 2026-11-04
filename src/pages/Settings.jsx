@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Button } from "../components/ui";
 import { getInstitutionAccount, institutionRequest, saveInstitutionSession, getInstitutionToken } from "../services/institutionApi";
 
@@ -6,12 +6,16 @@ export default function Settings({ notify }) {
   const [account, setAccount] = useState(getInstitutionAccount);
   const [form, setForm] = useState(() => ({
     institutionName: getInstitutionAccount()?.institutionName || "",
+    institutionType: getInstitutionAccount()?.institutionType || "",
     email: getInstitutionAccount()?.email || "",
     phone: getInstitutionAccount()?.phone || "",
+    country: getInstitutionAccount()?.country || "Nigeria",
     location: [getInstitutionAccount()?.city, getInstitutionAccount()?.state].filter(Boolean).join(", "),
     address: getInstitutionAccount()?.address || "",
   }));
   const [savingProfile, setSavingProfile] = useState(false);
+  const [savingLogo, setSavingLogo] = useState(false);
+  const logoInput = useRef(null);
   const [savingVisibility, setSavingVisibility] = useState(false);
   const [questionsPerPlay, setQuestionsPerPlay] = useState(10);
   const [loadingPracticeSettings, setLoadingPracticeSettings] = useState(true);
@@ -38,21 +42,47 @@ export default function Settings({ notify }) {
         method: "PATCH",
         body: JSON.stringify({
           institutionName: form.institutionName.trim(),
+          institutionType: form.institutionType.trim(),
           email: form.email.trim(),
           phone: form.phone.trim(),
           address: form.address.trim(),
           location: form.location.trim(),
+          country: form.country.trim(),
         }),
       });
       setAccount(data.account);
       saveInstitutionSession(getInstitutionToken(), data.account);
-      setForm((current) => ({ ...current, institutionName: data.account.institutionName, email: data.account.email, phone: data.account.phone || "", address: data.account.address || "", location: [data.account.city, data.account.state].filter(Boolean).join(", ") }));
+      setForm((current) => ({ ...current, institutionName: data.account.institutionName, institutionType: data.account.institutionType || "", email: data.account.email, phone: data.account.phone || "", address: data.account.address || "", country: data.account.country || "Nigeria", location: [data.account.city, data.account.state].filter(Boolean).join(", ") }));
       window.dispatchEvent(new CustomEvent("institution-account-updated", { detail: data.account }));
       notify(data.message || "Institution profile updated.");
     } catch (error) {
       notify(error.message);
     } finally {
       setSavingProfile(false);
+    }
+  };
+
+  const uploadLogo = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    if (!/^image\/(jpeg|png|gif|webp)$/.test(file.type) || file.size > 5 * 1024 * 1024) {
+      notify("Choose a JPEG, PNG, GIF, or WebP image under 5 MB.");
+      return;
+    }
+    const body = new FormData();
+    body.append("image", file);
+    setSavingLogo(true);
+    try {
+      const data = await institutionRequest("/auth/institution/logo", { method: "POST", body });
+      setAccount(data.account);
+      saveInstitutionSession(getInstitutionToken(), data.account);
+      window.dispatchEvent(new CustomEvent("institution-account-updated", { detail: data.account }));
+      notify(data.message || "Institution logo updated.");
+    } catch (error) {
+      notify(error.message);
+    } finally {
+      setSavingLogo(false);
     }
   };
 
@@ -93,5 +123,5 @@ export default function Settings({ notify }) {
     }
   };
 
-  return <div className="content-stack settings-grid"><section className="panel settings-main"><div className="settings-cover"><div className="institution-logo"><img src="/Cedu Logo.png" alt="Cedu" /></div><span className="settings-logo-note">Cedu workspace logo</span></div><form className="settings-form" onSubmit={saveProfile}><div className="section-title"><h2>Institution profile</h2><span>Visible to students and teachers</span></div><div className="form-grid"><label>Institution name<input value={form.institutionName} onChange={updateField("institutionName")} required /></label><label>Institution email<input type="email" value={form.email} onChange={updateField("email")} required /></label><label>Phone number<input value={form.phone} onChange={updateField("phone")} /></label><label>Location<input value={form.location} onChange={updateField("location")} /></label></div><label>Address<textarea value={form.address} onChange={updateField("address")} placeholder="Street address or campus location" /></label><Button type="submit" loading={savingProfile} loadingText="Saving...">Save changes</Button></form></section><div className="settings-practice-stack"><section className="panel settings-side"><div className="panel-header"><div><h2>Practice sessions</h2><p className="panel-copy">Set how many questions learners answer each time they play. Questions are shuffled for every new session.</p></div></div><form className="practice-settings-form" onSubmit={savePracticeSettings}><label htmlFor="questions-per-play">Questions per play</label><div className="practice-count-control"><input id="questions-per-play" type="number" min="1" max="200" step="1" value={questionsPerPlay} onChange={(event) => setQuestionsPerPlay(event.target.value)} disabled={loadingPracticeSettings || savingPracticeSettings} required /><span>questions</span></div><p className="panel-copy">Choose from 1 to 200. If fewer published questions are available in a learning area, learners will see all available questions.</p><Button type="submit" loading={savingPracticeSettings || loadingPracticeSettings} loadingText={loadingPracticeSettings ? "Loading..." : "Saving..."}>Save practice settings</Button></form></section><section className="panel settings-side"><div className="panel-header"><div><h2>Access & publishing</h2><p className="panel-copy">Choose how learners can find and request access to your institution.</p></div></div><div className="visibility-options"><button type="button" className={`visibility-option ${publicAccess ? "selected" : ""}`} onClick={() => updateVisibility(true)} disabled={savingVisibility}><strong>Public institution</strong><span>Appear in the public institution directory so learners can find and request access.</span>{publicAccess && <b>Current setting</b>}</button><button type="button" className={`visibility-option ${!publicAccess ? "selected" : ""}`} onClick={() => updateVisibility(false)} disabled={savingVisibility}><strong>Invite-only institution</strong><span>Stay hidden from the directory. Learners need your invitation code to request access.</span>{!publicAccess && <b>Current setting</b>}</button>{savingVisibility && <p className="panel-copy" role="status">Saving visibility...</p>}</div></section></div></div>;
+  return <div className="content-stack settings-grid"><section className="panel settings-main"><div className="settings-cover"><div className="institution-logo"><img src={account?.logoUrl || "/Cedu Logo.png"} alt={account?.logoUrl ? `${account.institutionName} logo` : "Cedu"} /></div><div className="settings-logo-copy"><strong>Institution logo</strong><span>Shown to learners in Cedu</span></div><input ref={logoInput} className="settings-logo-input" type="file" accept="image/jpeg,image/png,image/gif,image/webp" onChange={uploadLogo} /><button type="button" onClick={() => logoInput.current?.click()} disabled={savingLogo}>{savingLogo ? "Uploading..." : account?.logoUrl ? "Change logo" : "Add logo"}</button></div><form className="settings-form" onSubmit={saveProfile}><div className="section-title"><h2>Institution profile</h2><span>Visible to students and teachers</span></div><div className="form-grid"><label>Institution name<input value={form.institutionName} onChange={updateField("institutionName")} required /></label><label>Institution type<input value={form.institutionType} onChange={updateField("institutionType")} required placeholder="e.g. Secondary school" /></label><label>Institution email<input type="email" value={form.email} onChange={updateField("email")} required /></label><label>Phone number<input value={form.phone} onChange={updateField("phone")} /></label><label>Location<input value={form.location} onChange={updateField("location")} placeholder="City, State or region" /></label><label>Country<input value={form.country} onChange={updateField("country")} required /></label></div><label>Address<textarea value={form.address} onChange={updateField("address")} placeholder="Street address or campus location" /></label><Button type="submit" loading={savingProfile} loadingText="Saving...">Save changes</Button></form></section><div className="settings-practice-stack"><section className="panel settings-side"><div className="panel-header"><div><h2>Practice sessions</h2><p className="panel-copy">Set how many questions learners answer each time they play. Questions are shuffled for every new session.</p></div></div><form className="practice-settings-form" onSubmit={savePracticeSettings}><label htmlFor="questions-per-play">Questions per play</label><div className="practice-count-control"><input id="questions-per-play" type="number" min="1" max="200" step="1" value={questionsPerPlay} onChange={(event) => setQuestionsPerPlay(event.target.value)} disabled={loadingPracticeSettings || savingPracticeSettings} required /><span>questions</span></div><p className="panel-copy">Choose from 1 to 200. If fewer published questions are available in a learning area, learners will see all available questions.</p><Button type="submit" loading={savingPracticeSettings || loadingPracticeSettings} loadingText={loadingPracticeSettings ? "Loading..." : "Saving..."}>Save practice settings</Button></form></section><section className="panel settings-side"><div className="panel-header"><div><h2>Access & publishing</h2><p className="panel-copy">Choose how learners can find and request access to your institution.</p></div></div><div className="visibility-options"><button type="button" className={`visibility-option ${publicAccess ? "selected" : ""}`} onClick={() => updateVisibility(true)} disabled={savingVisibility}><strong>Public institution</strong><span>Appear in the public institution directory so learners can find and request access.</span>{publicAccess && <b>Current setting</b>}</button><button type="button" className={`visibility-option ${!publicAccess ? "selected" : ""}`} onClick={() => updateVisibility(false)} disabled={savingVisibility}><strong>Invite-only institution</strong><span>Stay hidden from the directory. Learners need your invitation code to request access.</span>{!publicAccess && <b>Current setting</b>}</button>{savingVisibility && <p className="panel-copy" role="status">Saving visibility...</p>}</div></section></div></div>;
 }
