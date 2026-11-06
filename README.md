@@ -21,6 +21,13 @@ npm run dev
 
 Set `VITE_API_URL` to the URL of `Cedugames_BE` when running against a local or deployed API. The institution app uses the same backend consumed by `Cedugames_Users` and `Cedugames_Admin`.
 
+## Deployment branches
+
+- `main` is the Contabo production deployment. Set `VITE_API_URL=https://cedu-api.cephasict.com` in the Contabo frontend build environment.
+- `staging` is the Render staging deployment. Connect the Render static site to the `staging` branch and set `VITE_API_URL=https://cedugames-backend.onrender.com` in its build environment.
+
+The source fallback follows each branch's deployment target, so builds still use the matching API if the variable is omitted. For local development, create a `.env` file with `VITE_API_URL` set to your chosen API.
+
 ## Related workspaces
 
 - `C:\Users\akind\Desktop\Cedugames_BE` — Express/TypeScript API and migrations
