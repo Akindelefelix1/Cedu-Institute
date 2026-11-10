@@ -1,4 +1,4 @@
-const API_URL = (import.meta.env.VITE_API_URL || "https://cedu-api.cephasict.com").replace(/\/+$/, "");
+const API_URL = (import.meta.env.VITE_API_URL || "https://cedugames-backend.onrender.com").replace(/\/+$/, "");
 export const INSTITUTION_TOKEN_KEY = "cedu_institution_token";
 export const INSTITUTION_ACCOUNT_KEY = "cedu_institution_account";
 export async function institutionRequest(path, options = {}) {
