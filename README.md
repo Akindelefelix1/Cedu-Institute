@@ -6,7 +6,10 @@ PS C:\Users\akind\Desktop\Cedugames_Users>
 access the siblings folders from here for all  end to end wiring
 
 
-merge every commit on staging branch to the main banch on all the repos so that github stays updated on both branches across all repo
+and check the last implementation for any gaps, error or inconsistency and fix them neatly, so that they will be production readybd
+
+
+merge every commit on staging branches to the main banch on all the repos so that github stays updated on both branches across all repo
 
 
 
